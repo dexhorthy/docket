@@ -1,0 +1,33 @@
+---
+- name: foo
+  cron: "* * * * * *"
+  container:
+      host_config:
+          AutoRemove: true
+      config:
+          Image: busybox:latest
+          Cmd:
+              - echo
+              - its foo
+- name: bar
+  cron: "* * * * * *"
+  container:
+      host_config:
+          AutoRemove: true
+      config:
+          Image: openjdk:7-jre-alpine
+          Cmd:
+              - /bin/sh
+              - '-C'
+              - echo its bar
+
+- name: baz
+  cron: "* * * * * *"
+  container:
+      host_config:
+          AutoRemove: true
+      config:
+          Image: mattbailey/dfksdalfaslkj
+          Cmd:
+              - echo
+              - its baz

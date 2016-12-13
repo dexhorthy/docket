@@ -30,10 +30,10 @@ func Start() {
 		c.Map(mutex)
 	})
 
-	m.Get("/", HandleGet)
-	m.Get("/:name", HandleGetAllocation)
-	m.Delete("/:name", HandleDeleteAllocation)
-	m.Post("/", binding.Bind(allocations.AllocationSpecification{}), HandlePost)
+	m.Get("/", handleGet)
+	m.Get("/:name", handleGetAllocation)
+	m.Delete("/:name", handleDeleteAllocation)
+	m.Post("/", binding.Bind(allocations.AllocationSpecification{}), handlePost)
 
 	client, err := docker.NewClientFromEnv()
 	if err != nil {
@@ -55,7 +55,7 @@ func Start() {
 	m.Run()
 }
 
-func HandlePost(
+func handlePost(
 	allocation allocations.AllocationSpecification,
 	allocationSource allocations.AllocationSource,
 	r render.Render,
@@ -83,7 +83,7 @@ func HandlePost(
 	}
 }
 
-func HandleGet(allocationSource allocations.AllocationSource, r render.Render) {
+func handleGet(allocationSource allocations.AllocationSource, r render.Render) {
 	list, err := allocationSource.List()
 	if err != nil {
 		r.JSON(500, err)
@@ -92,7 +92,7 @@ func HandleGet(allocationSource allocations.AllocationSource, r render.Render) {
 	}
 }
 
-func HandleGetAllocation(allocationSource allocations.AllocationSource, r render.Render, params martini.Params) {
+func handleGetAllocation(allocationSource allocations.AllocationSource, r render.Render, params martini.Params) {
 	allocation, err := allocationSource.Get(params["name"])
 	if err != nil {
 		r.JSON(500, err)
@@ -101,7 +101,7 @@ func HandleGetAllocation(allocationSource allocations.AllocationSource, r render
 	}
 }
 
-func HandleDeleteAllocation(allocationSource allocations.AllocationSource, r render.Render, params martini.Params, mutex *sync.Mutex) {
+func handleDeleteAllocation(allocationSource allocations.AllocationSource, r render.Render, params martini.Params, mutex *sync.Mutex) {
 	mutex.Lock()
 	log.Printf("Allocations locked by http worker for allocation %v", params["name"])
 	defer func() {

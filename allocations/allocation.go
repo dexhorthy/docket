@@ -75,7 +75,7 @@ type AllocationSource interface {
 
 	// If an allocation exists with the given name,
 	// update the values of that allocation.
-	// Otherwise create a new one. Retuns whether a
+	// Otherwise create a new one. Returns whether a
 	// new allocation was created.
 	CreateOrUpdate(allocation *AllocationSpecification) (bool, error)
 }

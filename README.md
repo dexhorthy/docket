@@ -1,6 +1,8 @@
 docket
 ======
 
+![report](https://goreportcard.com/badge/github.com/horthy/docket)
+
 A lightweight cron server for running short-lived docker containers.
 
 Install

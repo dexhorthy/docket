@@ -5,6 +5,8 @@ import (
 	"github.com/gorhill/cronexpr"
 )
 
+// InMemory creates a new AllocationSource
+// backed by a slice
 func InMemory() *InMemoryAllocations {
 	return &InMemoryAllocations{
 		allocations: Allocations{},

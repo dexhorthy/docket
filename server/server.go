@@ -17,17 +17,10 @@ func Start() {
 	// TODO: env vars to configure storage backend, for now default to InMemory
 	allocationSource := allocations.InMemory()
 
-	// mutex to prevent client calls from modifying Allocations while they
-	// are being inspected and run
-	mutex := &sync.Mutex{}
-
 	m := martini.Classic()
 	m.Use(render.Renderer())
 	m.Use(func(c martini.Context) {
 		c.MapTo(allocationSource, (*allocations.AllocationSource)(nil))
-	})
-	m.Use(func(c martini.Context) {
-		c.Map(mutex)
 	})
 
 	m.Get("/", handleGet)
@@ -46,7 +39,7 @@ func Start() {
 	ticker := time.NewTicker(1 * time.Minute)
 	go func() {
 		for range ticker.C {
-			RunAnyScheduledContainers(client, allocationSource, mutex)
+			RunAnyScheduledContainers(client, allocationSource)
 		}
 	}()
 
@@ -59,19 +52,11 @@ func handlePost(
 	allocation allocations.AllocationSpecification,
 	allocationSource allocations.AllocationSource,
 	r render.Render,
-	mutex *sync.Mutex,
 ) {
 
 	allocation.ProvisionDefaults()
 	pretty, err := json.MarshalIndent(allocation, "", "    ")
 	log.Printf("Received new allocation %v", string(pretty))
-
-	mutex.Lock()
-	log.Printf("Allocations locked by http worker for allocation %v", allocation.Name)
-	defer func() {
-		mutex.Unlock()
-		log.Printf("Allocations unlocked by http worker for allocation %v", allocation.Name)
-	}()
 
 	created, err := allocationSource.CreateOrUpdate(&allocation)
 	if err != nil {
@@ -101,13 +86,7 @@ func handleGetAllocation(allocationSource allocations.AllocationSource, r render
 	}
 }
 
-func handleDeleteAllocation(allocationSource allocations.AllocationSource, r render.Render, params martini.Params, mutex *sync.Mutex) {
-	mutex.Lock()
-	log.Printf("Allocations locked by http worker for allocation %v", params["name"])
-	defer func() {
-		mutex.Unlock()
-		log.Printf("Allocations unlocked by http worker for allocation %v", params["name"])
-	}()
+func handleDeleteAllocation(allocationSource allocations.AllocationSource, r render.Render, params martini.Params) {
 
 	err := allocationSource.Delete(params["name"])
 	if err != nil {
@@ -119,15 +98,7 @@ func handleDeleteAllocation(allocationSource allocations.AllocationSource, r ren
 
 // Check the list of allocations, and create+start any
 // containers that are scheduled at the time the method is called
-func RunAnyScheduledContainers(client *docker.Client, allocationSource allocations.AllocationSource, mutex *sync.Mutex) {
-	log.Print("Checking Allocations for containers to run")
-	mutex.Lock()
-	log.Print("Allocations are now locked")
-	defer func() {
-		mutex.Unlock()
-		log.Print("Allocations are now unlocked")
-	}()
-
+func RunAnyScheduledContainers(client *docker.Client, allocationSource allocations.AllocationSource) {
 	allAllocations, err := allocationSource.List()
 
 	if err != nil {

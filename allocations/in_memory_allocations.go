@@ -3,6 +3,8 @@ package allocations
 import (
 	"fmt"
 	"github.com/gorhill/cronexpr"
+	"log"
+	"sync"
 )
 
 // InMemory creates a new AllocationSource
@@ -10,17 +12,33 @@ import (
 func InMemory() *InMemoryAllocations {
 	return &InMemoryAllocations{
 		allocations: Allocations{},
+		mutex: &sync.Mutex{},
 	}
 }
 
 type InMemoryAllocations struct {
 	allocations Allocations
+	// mutex to prevent client calls from modifying Allocations while they
+	// are being inspected and run
+    mutex sync.Mutex
 }
 
 func (a *InMemoryAllocations) List() (Allocations, error) {
+	a.mutex.Lock()
+	log.Print("Allocations locked to read all allocations")
+	defer func() {
+		a.mutex.Unlock()
+		log.Print("Allocations unlocked after reading all allocations")
+	}()
 	return a.allocations, nil
 }
 func (a *InMemoryAllocations) Get(name string) (*Allocation, error) {
+	a.mutex.Lock()
+	log.Printf("Allocations locked to read allocation %v", name)
+	defer func() {
+		a.mutex.Unlock()
+		log.Printf("Allocations unlocked after reading allocation %v", name)
+	}()
 	for _, allocation := range a.allocations {
 		if allocation.Name == name {
 			return allocation, nil
@@ -30,6 +48,13 @@ func (a *InMemoryAllocations) Get(name string) (*Allocation, error) {
 }
 
 func (a *InMemoryAllocations) CreateOrUpdate(newAllocation *AllocationSpecification) (bool, error) {
+	a.mutex.Lock()
+	log.Printf("Allocations locked for new allocation %v", newAllocation.Name)
+	defer func() {
+		a.mutex.Unlock()
+		log.Printf("Allocations unlocked for new allocation %v", newAllocation.Name)
+	}()
+
 	for _, allocation := range a.allocations {
 		if allocation.Name == newAllocation.Name {
 			// update
@@ -46,6 +71,12 @@ func (a *InMemoryAllocations) CreateOrUpdate(newAllocation *AllocationSpecificat
 }
 
 func (a *InMemoryAllocations) Delete(name string) error {
+	a.mutex.Lock()
+	log.Printf("Allocations locked to delete allocation %v", name)
+	defer func() {
+		a.mutex.Unlock()
+		log.Printf("Allocations unlocked to delete allocation %v", name)
+	}()
 	var index int
 	found := false
 	for i, allocation := range a.allocations {

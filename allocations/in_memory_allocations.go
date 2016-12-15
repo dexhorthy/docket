@@ -13,12 +13,12 @@ import (
 func InMemory() *InMemoryAllocations {
 	return &InMemoryAllocations{
 		allocations: Allocations{},
-		mutex: &sync.Mutex{},
+		mutex:       &sync.Mutex{},
 	}
 }
 
 type InMemoryAllocations struct {
-	allocations  Allocations
+	allocations Allocations
 	// mutex to prevent client calls from modifying Allocations while they
 	// are being inspected and run
 	mutex        *sync.Mutex
@@ -27,7 +27,7 @@ type InMemoryAllocations struct {
 
 func (a *InMemoryAllocations) lockFor(reason string) {
 	a.mutex.Lock()
-    a.lockedReason = reason
+	a.lockedReason = reason
 	log.Printf("Allocations locked for: %v", reason)
 }
 
@@ -40,8 +40,8 @@ func (a *InMemoryAllocations) unlock() {
 }
 
 func (a *InMemoryAllocations) List() (Allocations, error) {
-    a.lockFor("list")
-    defer a.unlock()
+	a.lockFor("list")
+	defer a.unlock()
 	return a.allocations, nil
 }
 func (a *InMemoryAllocations) Get(name string) (*Allocation, error) {
@@ -95,15 +95,14 @@ func (a *InMemoryAllocations) Delete(name string) error {
 	return nil
 }
 
-
 func (a *InMemoryAllocations) Log(allocation *Allocation, events ...interface{}) error {
-    a.lockFor(fmt.Sprintf("logging to %v", allocation.Name))
+	a.lockFor(fmt.Sprintf("logging to %v", allocation.Name))
 	defer a.unlock()
 
 	for _, a := range a.allocations {
-		if a .Name == allocation.Name {
+		if a.Name == allocation.Name {
 			a.Logs = append(allocation.Logs, fmt.Sprintf("%v, %v", time.Now(), events))
-            return nil
+			return nil
 		}
 	}
 

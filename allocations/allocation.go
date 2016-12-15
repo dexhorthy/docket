@@ -5,44 +5,44 @@ import (
 	"github.com/codegangsta/martini-contrib/binding"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/gorhill/cronexpr"
+	"golang.org/x/net/context"
 	"log"
 	"net/http"
 	"time"
-	"golang.org/x/net/context"
 )
 
 // The request object sent to the server to define how and when a Container should be run
 type AllocationSpecification struct {
-	Name      string                        `json:"Name" yaml:"Name" binding:"required"`
-	Cron      string                        `json:"Cron"  yaml:"Cron" binding:"required"`
-	Container CreateContainerOptions        `json:"Container" yaml:"Container" binding:"required"`
+	Name      string                 `json:"Name" yaml:"Name" binding:"required"`
+	Cron      string                 `json:"Cron"  yaml:"Cron" binding:"required"`
+	Container CreateContainerOptions `json:"Container" yaml:"Container" binding:"required"`
 }
 
 // copy of docker.CreateContainerOptions,
 // but with no name or context,
 // and some custom yaml binding
 type CreateContainerOptions struct {
-    Config           *docker.Config           `qs:"-" json:"Config" yaml:"Config"`
-    HostConfig       *docker.HostConfig       `qs:"-" json:"HostConfig" yaml:"HostConfig"`
-    NetworkingConfig *docker.NetworkingConfig `qs:"-" json:"NetworkingConfig" yaml:"NetworkingConfig"`
+	Config           *docker.Config           `qs:"-" json:"Config" yaml:"Config"`
+	HostConfig       *docker.HostConfig       `qs:"-" json:"HostConfig" yaml:"HostConfig"`
+	NetworkingConfig *docker.NetworkingConfig `qs:"-" json:"NetworkingConfig" yaml:"NetworkingConfig"`
 }
 
 func (opts CreateContainerOptions) ToOptions() docker.CreateContainerOptions {
 	return docker.CreateContainerOptions{
-		Config: opts.Config,
-		HostConfig: opts.HostConfig,
+		Config:           opts.Config,
+		HostConfig:       opts.HostConfig,
 		NetworkingConfig: opts.NetworkingConfig,
-		Context: context.TODO(),
+		Context:          context.TODO(),
 	}
 }
 
 // The internal structure used to track and configure scheduled containers
 type Allocation struct {
-	Name      string                        `json:"Name" `
-	Logs      []interface{}                 `json:"Logs"`
-	Cron      string                        `json:"Cron"`
-	CronExpr  *cronexpr.Expression          `json:"-"`
-	Container CreateContainerOptions        `json:"Container"`
+	Name      string                 `json:"Name" `
+	Logs      []interface{}          `json:"Logs"`
+	Cron      string                 `json:"Cron"`
+	CronExpr  *cronexpr.Expression   `json:"-"`
+	Container CreateContainerOptions `json:"Container"`
 }
 
 type Allocations []*Allocation
@@ -89,8 +89,8 @@ type AllocationStore interface {
 	// new allocation was created.
 	CreateOrUpdate(allocation *AllocationSpecification) (bool, error)
 
-    // Log an event regarding an exiting specification
-	Log(allocation *Allocation, events ...interface{}) (error)
+	// Log an event regarding an exiting specification
+	Log(allocation *Allocation, events ...interface{}) error
 }
 
 func (allocation *Allocation) ShouldRunAt(atTime time.Time) bool {

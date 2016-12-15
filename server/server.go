@@ -7,9 +7,9 @@ import (
 	"github.com/codegangsta/martini-contrib/render"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/horthy/docket/allocations"
+	"github.com/horthy/docket/run"
 	"log"
 	"time"
-	"github.com/horthy/docket/run"
 )
 
 func Start() {
@@ -37,7 +37,7 @@ func Start() {
 	// using ticker feels kinda janky -- even if we continue to maintain our own collection
 	// of Allocations, we can still use a cron library to manage scheduling our checks
 	ticker := time.NewTicker(1 * time.Minute)
-    runner := run.NewFsouza(client, store)
+	runner := run.NewFsouza(client, store)
 	go func() {
 		for range ticker.C {
 			RunAnyScheduledContainers(runner, store)

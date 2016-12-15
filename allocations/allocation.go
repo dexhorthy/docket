@@ -65,17 +65,13 @@ func (allocation AllocationSpecification) Validate(errors *binding.Errors, req *
 	}
 }
 
-func (allocation *Allocation) Log(events ...interface{}) {
-	allocation.Logs = append(allocation.Logs, fmt.Sprintf("%v, %v", time.Now(), events))
-}
-
 // Abstraction on top of storing and querying
 // The collection of allocations. Right now
 // we'll back this with a slice, but may want to move
 // to gkvlite or etcd or redis or whatever
 // These are allowed to return error
 // because other implementations may include IO calls
-type AllocationSource interface {
+type AllocationStore interface {
 	// Get a list of all allocations
 	List() (Allocations, error)
 
@@ -92,6 +88,9 @@ type AllocationSource interface {
 	// Otherwise create a new one. Returns whether a
 	// new allocation was created.
 	CreateOrUpdate(allocation *AllocationSpecification) (bool, error)
+
+    // Log an event regarding an exiting specification
+	Log(allocation *Allocation, events ...interface{}) (error)
 }
 
 func (allocation *Allocation) ShouldRunAt(atTime time.Time) bool {

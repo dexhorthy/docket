@@ -18,7 +18,7 @@ Design
 ### Assumptions
 - Containers to be run are very short lived
 - We'll run on a single host with an in-memory store. If the server is stopped
-  all allocations are lost. (Although one could implement a persistent version of `AllocationSource`)
+  all allocations are lost. (Although one could implement a persistent version of `AllocationStore`)
 
 #### server
 
@@ -74,7 +74,7 @@ The server has 4 endpoints:
 - `DELETE /:name` deletes the allocation named `:name`
 - `POST /` Creates a new allocation or updates an existing one
 
-The server stores allocations in an implementation of `AllocationSource`.
+The server stores allocations in an implementation of `AllocationStore`.
 By default, it uses `allocations.InMemory()`, which is backed by a go slice.
 
 The server also runs a goroutine to check all the allocations every minute,

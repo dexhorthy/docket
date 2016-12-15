@@ -1,4 +1,4 @@
-// this package provides an implementation of AllocationSource
+// this package provides an implementation of allocationStore
 // that works by making HTTP calls to a server instance
 //
 // There is a lot of duplication between the methods here,

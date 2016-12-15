@@ -20,7 +20,7 @@ type InMemoryAllocations struct {
 	allocations Allocations
 	// mutex to prevent client calls from modifying Allocations while they
 	// are being inspected and run
-    mutex sync.Mutex
+    mutex *sync.Mutex
 }
 
 func (a *InMemoryAllocations) List() (Allocations, error) {

@@ -115,39 +115,40 @@ docket push my_custom_docket_config.yml
 `docket.yml` should contain a list of `AllocationSpecifications`:
 
 ```yaml
-# example docket.yml
 ---
-- name: foo
-  cron: "* * * * * *"
-  container:
-      host_config:
+- Name: foo
+  Cron: "* * * * * *"
+  Container:
+      HostConfig:
           AutoRemove: true
-      config:
+      Config:
           Image: busybox:latest
           Cmd:
               - echo
               - its foo
-- name: bar
-  cron: "* * * * * *"
-  container:
-      host_config:
+- Name: bar
+  Cron: "* * * * * *"
+  Container:
+      HostConfig:
           AutoRemove: true
-      config:
+      Config:
           Image: openjdk:7-jre-alpine
           Cmd:
-              - echo
-              - its bar
+              - /bin/sh
+              - '-C'
+              - echo its bar
 
-- name: baz
-  cron: "* * * * * *"
-  container:
-      host_config:
+- Name: baz
+  Cron: "* * * * * *"
+  Container:
+      HostConfig:
           AutoRemove: true
-      config:
-          Image: mattbailey/ch7-conductor
+      Config:
+          Image: mattbailey/dfksdalfaslkj
           Cmd:
               - echo
               - its baz
+
 ```
 
 

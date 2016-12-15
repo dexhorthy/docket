@@ -76,7 +76,7 @@ func (c *Client) CreateOrUpdate(newAllocation *allocations.AllocationSpecificati
 		return false, err
 	}
 
-	fmt.Fprint(os.Stderr, color.BlueString("POST %v", c.baseUrl))
+	fmt.Fprint(os.Stderr, color.BlueString("POST %v\n", c.baseUrl))
 
 	pretty, err := json.MarshalIndent(newAllocation, "", "    ")
 	fmt.Println(string(pretty))

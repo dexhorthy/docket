@@ -11,7 +11,7 @@ func TestInMemory(t *testing.T) {
 	allocations.CreateOrUpdate(&AllocationSpecification{
 		Name: "foo",
 		Cron: "* * * * * *",
-		Container: docker.CreateContainerOptions{
+		Container: CreateContainerOptions{
 			Config: &docker.Config{
 				Image: "busybox:latest",
 			},
@@ -26,7 +26,7 @@ func TestInMemory(t *testing.T) {
 	allocations.CreateOrUpdate(&AllocationSpecification{
 		Name: "foo",
 		Cron: "1 * * * * *",
-		Container: docker.CreateContainerOptions{
+		Container: CreateContainerOptions{
 			Config: &docker.Config{
 				Image: "busybox:latest",
 			},

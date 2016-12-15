@@ -8,7 +8,6 @@ import (
 	"github.com/fsouza/go-dockerclient"
 	"github.com/horthy/docket/allocations"
 	"log"
-	"sync"
 	"time"
 )
 
@@ -152,7 +151,7 @@ func pullImage(alloc *allocations.Allocation, client *docker.Client) error {
 
 func createContainer(alloc *allocations.Allocation, client *docker.Client) (*docker.Container, error) {
 	//create container
-	container, err := client.CreateContainer(alloc.Container)
+	container, err := client.CreateContainer(alloc.Container.ToOptions())
 	if err != nil {
 		log.Printf("Failed to create container for %v, error was %v", alloc.Name, err)
 		alloc.Log(err)

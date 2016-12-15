@@ -8,13 +8,32 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"golang.org/x/net/context"
 )
 
 // The request object sent to the server to define how and when a Container should be run
 type AllocationSpecification struct {
-	Name      string                        `json:"Name" binding:"required"`
-	Cron      string                        `json:"Cron" binding:"required"`
-	Container docker.CreateContainerOptions `json:"Container" binding:"required"`
+	Name      string                        `json:"Name" yaml:"Name" binding:"required"`
+	Cron      string                        `json:"Cron"  yaml:"Cron" binding:"required"`
+	Container CreateContainerOptions        `json:"Container" yaml:"Container" binding:"required"`
+}
+
+// copy of docker.CreateContainerOptions,
+// but with no name or context,
+// and some custom yaml binding
+type CreateContainerOptions struct {
+    Config           *docker.Config           `qs:"-" json:"Config" yaml:"Config"`
+    HostConfig       *docker.HostConfig       `qs:"-" json:"HostConfig" yaml:"HostConfig"`
+    NetworkingConfig *docker.NetworkingConfig `qs:"-" json:"NetworkingConfig" yaml:"NetworkingConfig"`
+}
+
+func (opts CreateContainerOptions) ToOptions() docker.CreateContainerOptions {
+	return docker.CreateContainerOptions{
+		Config: opts.Config,
+		HostConfig: opts.HostConfig,
+		NetworkingConfig: opts.NetworkingConfig,
+		Context: context.TODO(),
+	}
 }
 
 // The internal structure used to track and configure scheduled containers
@@ -23,7 +42,7 @@ type Allocation struct {
 	Logs      []interface{}                 `json:"Logs"`
 	Cron      string                        `json:"Cron"`
 	CronExpr  *cronexpr.Expression          `json:"-"`
-	Container docker.CreateContainerOptions `json:"Container"`
+	Container CreateContainerOptions        `json:"Container"`
 }
 
 type Allocations []*Allocation
@@ -33,11 +52,6 @@ func (allocation AllocationSpecification) Validate(errors *binding.Errors, req *
 
 	if err != nil {
 		errors.Fields["Cron"] = fmt.Sprintf("%v", err)
-	}
-
-	// Having issues getting AutoRemove to work. Coming soon
-	if allocation.Container.Name != "" {
-		errors.Fields["Container.Name"] = "Creating an allocation with a named container is not supported"
 	}
 
 	if allocation.Container.Config == nil {

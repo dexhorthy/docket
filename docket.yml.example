@@ -1,32 +1,32 @@
 ---
-- name: foo
-  cron: "* * * * * *"
-  container:
-      host_config:
+- Name: foo
+  Cron: "* * * * * *"
+  Container:
+      HostConfig:
           AutoRemove: true
-      config:
+      Config:
           Image: busybox:latest
           Cmd:
               - echo
               - its foo
-- name: bar
-  cron: "* * * * * *"
-  container:
-      host_config:
+- Name: bar
+  Cron: "* * * * * *"
+  Container:
+      HostConfig:
           AutoRemove: true
-      config:
+      Config:
           Image: openjdk:7-jre-alpine
           Cmd:
               - /bin/sh
               - '-C'
               - echo its bar
 
-- name: baz
-  cron: "* * * * * *"
-  container:
-      host_config:
+- Name: baz
+  Cron: "* * * * * *"
+  Container:
+      HostConfig:
           AutoRemove: true
-      config:
+      Config:
           Image: mattbailey/dfksdalfaslkj
           Cmd:
               - echo

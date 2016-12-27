@@ -3,6 +3,7 @@ package run
 import (
 	"github.com/fsouza/go-dockerclient"
 	"github.com/horthy/docket/allocations"
+	"github.com/horthy/docket/store"
 	"log"
 )
 
@@ -11,13 +12,13 @@ type AllocationRunner interface {
 }
 
 type FsouzaAllocationRunner struct {
-	store  allocations.AllocationStore
+	store  store.AllocationStore
 	client *docker.Client
 }
 
 func NewFsouza(
 	client *docker.Client,
-	store allocations.AllocationStore,
+	store store.AllocationStore,
 ) *FsouzaAllocationRunner {
 	return &FsouzaAllocationRunner{
 		client: client,

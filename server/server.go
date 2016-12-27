@@ -8,19 +8,47 @@ import (
 	"github.com/fsouza/go-dockerclient"
 	"github.com/horthy/docket/allocations"
 	"github.com/horthy/docket/run"
+	"github.com/horthy/docket/store"
+	"github.com/spf13/viper"
 	"log"
 	"time"
 )
 
+func initServerConfig() *viper.Viper {
+	v := viper.New()
+
+	v.SetConfigFile("docket")
+	v.AddConfigPath("/etc/docket")
+
+	v.SetDefault("host", "localhost")
+	v.SetDefault("port", "3000")
+	v.SetDefault("store", "InMemory")
+
+	v.SetEnvPrefix("docket")
+	v.BindEnv("port", "store", "host")
+
+	return v
+}
+
 func Start() {
 
-	// TODO: env vars to configure storage backend, for now default to InMemory
-	store := allocations.InMemory()
+	config := initServerConfig()
+
+	factory := store.StoreImpls[config.GetString("store")]
+
+	if factory == nil {
+		log.Fatalf("No implementation found for backend store: %v", config.Get("store"))
+	}
+
+	allocationStore, err := factory.Create(config)
+	if err != nil {
+		log.Fatalf("Couldn't initialize allocation store: %v", err)
+	}
 
 	m := martini.Classic()
 	m.Use(render.Renderer())
 	m.Use(func(c martini.Context) {
-		c.MapTo(store, (*allocations.AllocationStore)(nil))
+		c.MapTo(allocationStore, (*store.AllocationStore)(nil))
 	})
 
 	m.Get("/", handleGet)
@@ -35,23 +63,27 @@ func Start() {
 
 	// TODO
 	// using ticker feels kinda janky -- even if we continue to maintain our own collection
-	// of Allocations, we can still use a cron library to manage scheduling our checks
+	// of Allocations (as opposed to just registering each request using some cron package),
+	// we can still use a cron library to manage scheduling our checks
+
 	ticker := time.NewTicker(1 * time.Minute)
-	runner := run.NewFsouza(client, store)
+	runner := run.NewFsouza(client, allocationStore)
 	go func() {
 		for range ticker.C {
-			RunAnyScheduledContainers(runner, store)
+			RunAnyScheduledContainers(runner, allocationStore)
 		}
 	}()
 
-	// TODO/nice to have: watch docker event stream, add exit codes to Allocation Logs
+	log.Printf("%v", config)
 
-	m.Run()
+	m.RunOnAddr(config.GetString("host") + ":" + config.GetString("port"))
+
+	// TODO/nice to have: watch docker event stream, add exit codes to Allocation Logs
 }
 
 func handlePost(
 	allocation allocations.AllocationSpecification,
-	allocationStore allocations.AllocationStore,
+	allocationStore store.AllocationStore,
 	r render.Render,
 ) {
 
@@ -69,7 +101,7 @@ func handlePost(
 	}
 }
 
-func handleGet(allocationStore allocations.AllocationStore, r render.Render) {
+func handleGet(allocationStore store.AllocationStore, r render.Render) {
 	list, err := allocationStore.List()
 	if err != nil {
 		r.JSON(500, err)
@@ -78,7 +110,7 @@ func handleGet(allocationStore allocations.AllocationStore, r render.Render) {
 	}
 }
 
-func handleGetAllocation(allocationStore allocations.AllocationStore, r render.Render, params martini.Params) {
+func handleGetAllocation(allocationStore store.AllocationStore, r render.Render, params martini.Params) {
 	allocation, err := allocationStore.Get(params["name"])
 	if err != nil {
 		r.JSON(500, err)
@@ -87,7 +119,7 @@ func handleGetAllocation(allocationStore allocations.AllocationStore, r render.R
 	}
 }
 
-func handleDeleteAllocation(allocationStore allocations.AllocationStore, r render.Render, params martini.Params) {
+func handleDeleteAllocation(allocationStore store.AllocationStore, r render.Render, params martini.Params) {
 
 	err := allocationStore.Delete(params["name"])
 	if err != nil {
@@ -99,7 +131,7 @@ func handleDeleteAllocation(allocationStore allocations.AllocationStore, r rende
 
 // Check the list of allocations, and create+start any
 // containers that are scheduled at the time the method is called
-func RunAnyScheduledContainers(runner run.AllocationRunner, allocationStore allocations.AllocationStore) {
+func RunAnyScheduledContainers(runner run.AllocationRunner, allocationStore store.AllocationStore) {
 	allAllocations, err := allocationStore.List()
 
 	if err != nil {

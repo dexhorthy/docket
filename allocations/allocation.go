@@ -65,34 +65,6 @@ func (allocation AllocationSpecification) Validate(errors *binding.Errors, req *
 	}
 }
 
-// Abstraction on top of storing and querying
-// The collection of allocations. Right now
-// we'll back this with a slice, but may want to move
-// to gkvlite or etcd or redis or whatever
-// These are allowed to return error
-// because other implementations may include IO calls
-type AllocationStore interface {
-	// Get a list of all allocations
-	List() (Allocations, error)
-
-	// Get the allocation by name.
-	// will return an error if it can't be found
-	Get(name string) (*Allocation, error)
-
-	// Delete an allocation by name
-	// will return an error if it can't be found
-	Delete(name string) error
-
-	// If an allocation exists with the given name,
-	// update the values of that allocation.
-	// Otherwise create a new one. Returns whether a
-	// new allocation was created.
-	CreateOrUpdate(allocation *AllocationSpecification) (bool, error)
-
-	// Log an event regarding an exiting specification
-	Log(allocation *Allocation, events ...interface{}) error
-}
-
 func (allocation *Allocation) ShouldRunAt(atTime time.Time) bool {
 	nextExecution := allocation.CronExpr.Next(atTime)
 	log.Printf("Allocation %v would next run at %v", allocation.Name, nextExecution)

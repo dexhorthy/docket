@@ -1,24 +1,36 @@
-package allocations
+package store
 
 import (
 	"fmt"
 	"github.com/gorhill/cronexpr"
+	"github.com/horthy/docket/allocations"
+	"github.com/spf13/viper"
 	"log"
 	"sync"
 	"time"
 )
 
+func init() {
+	StoreImpls["InMemory"] = &inMemoryFactory{}
+}
+
+type inMemoryFactory struct{}
+
+func (*inMemoryFactory) Create(*viper.Viper) (AllocationStore, error) {
+	return InMemory(), nil
+}
+
 // InMemory creates a new allocationStore
 // backed by a slice
 func InMemory() *InMemoryAllocations {
 	return &InMemoryAllocations{
-		allocations: Allocations{},
+		allocations: allocations.Allocations{},
 		mutex:       &sync.Mutex{},
 	}
 }
 
 type InMemoryAllocations struct {
-	allocations Allocations
+	allocations allocations.Allocations
 	// mutex to prevent client calls from modifying Allocations while they
 	// are being inspected and run
 	mutex        *sync.Mutex
@@ -39,12 +51,12 @@ func (a *InMemoryAllocations) unlock() {
 
 }
 
-func (a *InMemoryAllocations) List() (Allocations, error) {
+func (a *InMemoryAllocations) List() (allocations.Allocations, error) {
 	a.lockFor("list")
 	defer a.unlock()
 	return a.allocations, nil
 }
-func (a *InMemoryAllocations) Get(name string) (*Allocation, error) {
+func (a *InMemoryAllocations) Get(name string) (*allocations.Allocation, error) {
 	a.lockFor("get")
 	defer a.unlock()
 	for _, allocation := range a.allocations {
@@ -55,7 +67,7 @@ func (a *InMemoryAllocations) Get(name string) (*Allocation, error) {
 	return nil, fmt.Errorf("Allocation with name %v not found", name)
 }
 
-func (a *InMemoryAllocations) CreateOrUpdate(newAllocation *AllocationSpecification) (bool, error) {
+func (a *InMemoryAllocations) CreateOrUpdate(newAllocation *allocations.AllocationSpecification) (bool, error) {
 	a.lockFor("create or update")
 	defer a.unlock()
 
@@ -70,7 +82,7 @@ func (a *InMemoryAllocations) CreateOrUpdate(newAllocation *AllocationSpecificat
 	}
 
 	// create a new one
-	a.allocations = append(a.allocations, NewAllocation(newAllocation))
+	a.allocations = append(a.allocations, allocations.NewAllocation(newAllocation))
 	return true, nil
 }
 
@@ -95,7 +107,7 @@ func (a *InMemoryAllocations) Delete(name string) error {
 	return nil
 }
 
-func (a *InMemoryAllocations) Log(allocation *Allocation, events ...interface{}) error {
+func (a *InMemoryAllocations) Log(allocation *allocations.Allocation, events ...interface{}) error {
 	a.lockFor(fmt.Sprintf("logging to %v", allocation.Name))
 	defer a.unlock()
 
